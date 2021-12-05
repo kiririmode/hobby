@@ -1,0 +1,111 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      issues: write
+    env:
+      AWS_REGION: ap-northeast-1
+      TF_IN_AUTOMATION: true
+
+    strategy:
+      matrix:
+        dir:
+          - aws/backend
+          - aws/budgets
+          - aws/memories
+          - aws/github_actions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # matrix.dir で指定されたサブディレクトリの中にある terraform ファイルの差分を確認する
+      - name: Diff Terraform Scripts
+        id: diff
+        uses: technote-space/get-diff-action@v5
+        with:
+          PATTERNS: |
+            ${{ matrix.dir }}/**/*.tf
+            ${{ matrix.dir }}/**/*.tfvars
+
+      - name: Configure aws credentials
+        if: steps.diff.outputs.diff
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.TERRAFORM_ROLE_TO_ASSUME }}
+          role-duration-seconds: 900
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup terraform
+        if: steps.diff.outputs.diff
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.1.2
+          terraform_wrapper: true
+
+      - name: Check format
+        id: fmt
+        if: steps.diff.outputs.diff
+        run: terraform fmt -check -recursive
+        working-directory: ${{ matrix.dir }}
+        continue-on-error: true
+
+      - name: Comment format results
+        uses: robburger/terraform-pr-commenter@v1
+        if: steps.fmt.outputs.diff
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commenter_type: fmt
+          commenter_input: ${{ format('{0}{1}', steps.fmt.outputs.stdout, steps.fmt.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.fmt.outputs.exitcode }}
+
+      - name: Initialize
+        id: init
+        if: steps.diff.outputs.diff
+        run: terraform init
+        working-directory: ${{ matrix.dir }}
+        continue-on-error: true
+
+      - name: Comment initialization results
+        uses: robburger/terraform-pr-commenter@v1
+        if: steps.init.outputs.diff
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commenter_type: init
+          commenter_input: ${{ format('{0}{1}', steps.init.outputs.stdout, steps.init.outputs.stderr) }}
+          commenter_exitcode: ${{ steps.init.outputs.exitcode }}
+
+      - name: Apply
+        if: steps.diff.outputs.diff
+        id: apply
+        run: terraform apply --auto-approve -no-color
+        working-directory: ${{ matrix.dir }}
+        continue-on-error: true
+
+      # Apply 失敗時には、その失敗を示す issue を自動作成する
+      - name: Create an issue for apply error
+        id: create-issue
+        uses: JasonEtco/create-an-issue@v2
+        if: ${{ failure() }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          filename: .github/terraform-apply-failed.md
+          assignees: kiririmode
+          # 同じ名前の Open な issue があったとき、issue を新規作成せずに既存 issue を更新する
+          update_existing: true
+          search_existing: open
+
+      - name: Exit with appropriate status
+        if: steps.fmt.outcome == 'failure' || steps.init.outcome == 'failure' || steps.validate.outcome == 'failure' || steps.plan.outcome == 'failure'
+        run: exit 1
