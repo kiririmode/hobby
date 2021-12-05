@@ -18,8 +18,6 @@ resource "aws_iam_role" "github_actions" {
   assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
   managed_policy_arns = [
     aws_iam_policy.backend_access.arn
-    #    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-    #    "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
   ]
 }
 
@@ -45,21 +43,22 @@ data "aws_iam_policy_document" "assume_role_policy" {
 }
 
 resource "aws_iam_policy" "backend_access" {
-  name = "TerraformBackendAccessPolicy"
-  description = "TODO: "
-  policy = data.aws_iam_policy_document.backend_access.json
+  name        = "TerraformBackendAccessPolicy"
+  description = "TerraformのBackendアクセス用ポリシー"
+  policy      = data.aws_iam_policy_document.backend_access.json
 }
 
 # see: https://www.terraform.io/docs/language/settings/backends/s3.html
 data "aws_iam_policy_document" "backend_access" {
   statement {
-    actions  = ["s3:ListBucket"]
+    actions   = ["s3:ListBucket"]
     resources = ["arn:aws:s3:::kiririmode-tfbackend"]
   }
   statement {
     actions = [
       "s3:GetObject",
-    "s3:PutObject"]
+      "s3:PutObject"
+    ]
     resources = ["arn:aws:s3:::kiririmode-tfbackend/*"]
   }
 
