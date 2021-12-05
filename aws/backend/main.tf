@@ -1,4 +1,11 @@
-provider "aws" {}
+provider "aws" {
+  region = "ap-northeast-1"
+  default_tags {
+    tags = {
+      ManagedBy = "Terraformer"
+    }
+  }
+}
 
 resource "aws_s3_bucket" "this" {
   bucket        = "kiririmode-tfbackend"
