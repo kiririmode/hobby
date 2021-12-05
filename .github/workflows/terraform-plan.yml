@@ -72,6 +72,7 @@ jobs:
         if: steps.diff.outputs.diff
         run: terraform init
         working-directory: ${{ matrix.dir }}
+        continue-on-error: true
 
       - name: Comment initialization results
         uses: robburger/terraform-pr-commenter@v1
@@ -88,6 +89,7 @@ jobs:
         if: steps.diff.outputs.diff
         run: terraform validate -no-color
         working-directory: ${{ matrix.dir }}
+        continue-on-error: true
 
       - name: Comment validate results
         uses: robburger/terraform-pr-commenter@v1
