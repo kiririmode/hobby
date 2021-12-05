@@ -21,6 +21,7 @@ jobs:
           - aws/backend
           - aws/budgets
           - aws/memories
+          - aws/github_actions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
