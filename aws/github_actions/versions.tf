@@ -9,9 +9,9 @@ terraform {
 
   backend "s3" {
     bucket         = "kiririmode-tfbackend"
-    key            = "budgets"
+    key            = "github_actions"
     encrypt        = true
     dynamodb_table = "terraform_state"
-    region = "ap-northeast-1"
+    region         = "ap-northeast-1"
   }
 }
