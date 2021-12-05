@@ -12,5 +12,6 @@ terraform {
     key            = "budgets"
     encrypt        = true
     dynamodb_table = "terraform_state"
+    region = "ap-northeast-1"
   }
 }
