@@ -44,7 +44,7 @@ data "aws_iam_policy_document" "assume_role_policy" {
 
 resource "aws_iam_policy" "backend_access" {
   name = "TerraformBackendAccessPolicy"
-  description = "TODO: "
+  description = "TerraformのBackendアクセス用ポリシー"
   policy = data.aws_iam_policy_document.backend_access.json
 }
 
