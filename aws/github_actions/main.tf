@@ -43,9 +43,13 @@ data "aws_iam_policy_document" "assume_role_policy" {
 }
 
 resource "aws_iam_policy" "backend_access" {
-  name        = "TerraformBackendAccessPolicy"
+  name_prefix = "TerraformBackendAccessPolicy"
   description = "TerraformのBackendアクセス用ポリシー"
   policy      = data.aws_iam_policy_document.backend_access.json
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # see: https://www.terraform.io/docs/language/settings/backends/s3.html
