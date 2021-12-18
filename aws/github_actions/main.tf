@@ -52,6 +52,26 @@ resource "aws_iam_policy" "backend_access" {
   }
 }
 
+resource "aws_iam_policy" "github_actions" {
+  name_prefix = "GitHubActionsPolicy"
+  description = "GitHub ActionsをOIDC Providerと連携して実行するためのPolicy"
+  policy      = data.aws_iam_policy_document.github_actions.json
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+data "aws_iam_policy_document" "github_actions" {
+  statement {
+    actions = [
+      "iam:GetPolicy",
+      "iam:GetOpenIDConnectProvider"
+    ]
+    resources = [aws_iam_openid_connect_provider.github.arn]
+  }
+}
+
 # see: https://www.terraform.io/docs/language/settings/backends/s3.html
 data "aws_iam_policy_document" "backend_access" {
   statement {
