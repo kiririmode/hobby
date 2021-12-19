@@ -21,6 +21,7 @@ jobs:
         dir:
           - aws/backend
           - aws/budgets
+          - aws/cloudtrail
           - aws/memories
           - aws/github_actions
     steps:
