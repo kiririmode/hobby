@@ -12,6 +12,9 @@ locals {
 }
 
 resource "aws_budgets_budget" "total" {
+  # 予測コスト、実コストのそれぞれで設定
+  for_each = toset(["FORECASTED", "ACTUAL"])
+
   name         = "total_budgets"
   budget_type  = "COST"
   limit_amount = "10"
@@ -26,7 +29,7 @@ resource "aws_budgets_budget" "total" {
     comparison_operator        = "GREATER_THAN"
     threshold                  = 20
     threshold_type             = "PERCENTAGE"
-    notification_type          = "FORECASTED"
+    notification_type          = each.key
     subscriber_email_addresses = local.notification_emails
   }
 }
