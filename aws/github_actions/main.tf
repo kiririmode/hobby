@@ -21,7 +21,10 @@ resource "aws_iam_role" "github_actions" {
   managed_policy_arns = [
     aws_iam_policy.backend_access.arn,
     aws_iam_policy.github_actions.arn,
-    "arn:aws:iam::aws:policy/AWSBudgetsActionsWithAWSResourceControlAccess"
+    "arn:aws:iam::aws:policy/AWSBudgetsActionsWithAWSResourceControlAccess", # for budgets
+    # for cloudtrail
+    aws_iam_policy.cloudtrail.arn,
+    "arn:aws:iam::aws:policy/AmazonS3FullAccess"
   ]
 }
 
@@ -66,6 +69,16 @@ resource "aws_iam_policy" "github_actions" {
   }
 }
 
+resource "aws_iam_policy" "cloudtrail" {
+  name_prefix = "GitHubActionsCloudTrailPolicy"
+  description = "GitHub ActionsからCloudTrailを制御するためのPolicy"
+  policy      = data.aws_iam_policy_document.cloudtrail.json
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 data "aws_iam_policy_document" "github_actions" {
   statement {
     actions = [
@@ -83,6 +96,18 @@ data "aws_iam_policy_document" "github_actions" {
       aws_iam_policy.backend_access.arn,
       aws_iam_openid_connect_provider.github.arn
     ]
+  }
+}
+
+data "aws_iam_policy_document" "cloudtrail" {
+  statement {
+    actions = [
+      "cloudtrail:DescribeTrails",
+      "cloudtrail:ListTags",
+      "cloudtrail:GetTrailStatus",
+      "cloudtrail:GetEventSelectors"
+    ]
+    resources = ["*"]
   }
 }
 
