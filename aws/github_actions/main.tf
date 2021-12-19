@@ -12,12 +12,16 @@ locals {
   repository_name = "kiririmode/hobby"
 }
 
+data "aws_caller_identity" "current" {}
+
 resource "aws_iam_role" "github_actions" {
   name               = "GitHubActionsRole"
   description        = "GitHub Actions"
   assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
   managed_policy_arns = [
-    aws_iam_policy.backend_access.arn
+    aws_iam_policy.backend_access.arn,
+    aws_iam_policy.github_actions.arn,
+    "arn:aws:iam::aws:policy/AWSBudgetsActionsWithAWSResourceControlAccess"
   ]
 }
 
@@ -43,9 +47,43 @@ data "aws_iam_policy_document" "assume_role_policy" {
 }
 
 resource "aws_iam_policy" "backend_access" {
-  name        = "TerraformBackendAccessPolicy"
+  name_prefix = "TerraformBackendAccessPolicy"
   description = "TerraformのBackendアクセス用ポリシー"
   policy      = data.aws_iam_policy_document.backend_access.json
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_iam_policy" "github_actions" {
+  name_prefix = "GitHubActionsPolicy"
+  description = "GitHub ActionsをOIDC Providerと連携して実行するためのPolicy"
+  policy      = data.aws_iam_policy_document.github_actions.json
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+data "aws_iam_policy_document" "github_actions" {
+  statement {
+    actions = [
+      "iam:GetPolicy",
+      "iam:GetOpenIDConnectProvider",
+      "iam:GetPolicyVersion",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies"
+    ]
+    resources = [
+      # TODO: Error: error reading IAM Role (GitHubActionsRole): AccessDenied: User: arn:aws:sts::***:assumed-role/GitHubActionsRole/GitHubActions is not authorized to perform: iam:GetRole on resource: role GitHubActionsRole を回避するためのアスタリスク。
+      # IAM Access Analyzer をみて、権限は狭められるはず。
+      "*",
+      aws_iam_policy.backend_access.arn,
+      aws_iam_openid_connect_provider.github.arn
+    ]
+  }
 }
 
 # see: https://www.terraform.io/docs/language/settings/backends/s3.html
