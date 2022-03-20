@@ -18,9 +18,10 @@
     <maven.compiler.target>17</maven.compiler.target>
     <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
 
+    <linkXRef>true</linkXRef>
     <checkstyle.config.location>kiririmode-checkstyle.xml</checkstyle.config.location>
     <checkstyle.consoleOutput>true</checkstyle.consoleOutput>
-    <checkstyle.violationSeverity>warning</checkstyle.violationSeverity>
+    <!-- <checkstyle.violationSeverity>warning</checkstyle.violationSeverity> -->
   </properties>
 
   <dependencyManagement>
@@ -136,6 +137,39 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>${spotbugs.version}</version>
+        <configuration>
+          <effort>Max</effort>
+          <!-- <includeFilterFile>spotbugs-include.xml</includeFilterFile> -->
+          <plugins>
+            <plugin>
+              <groupId>com.h3xstream.findsecbugs</groupId>
+              <artifactId>findsecbugs-plugin</artifactId>
+              <version>1.10.1</version>
+            </plugin>
+          </plugins>
+        </configuration>
+        <executions>
+          <execution>
+            <id>test</id>
+            <phase>test</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs</artifactId>
+            <version>4.6.0</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
