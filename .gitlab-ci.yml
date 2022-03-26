@@ -9,12 +9,6 @@ unittest:
   image: maven:3.8.4-openjdk-17-slim
   script:
     - mvn -f app/movie-uploader/pom.xml verify
-    # CheckStyleのCode Quality形式のJSONファイルにはファイルパスが絶対パスとして格納されているため、
-    # プロジェクトルートからの相対パスに変換する
-    - sed --in-place "s|$(pwd)/||g" app/movie-uploader/target/codeclimate.json
-  artifacts:
-    reports:
-      codequality: app/movie-uploader/target/codeclimate.json
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
