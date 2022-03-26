@@ -3,12 +3,36 @@ stages:
 
 variables:
   DOCKER_VERSION: stable
+  REVIEWDOG_VERSION: v0.14.0
 
 unittest:
   stage: test
   image: maven:3.8.4-openjdk-17-slim
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0
+    MAVEN_OPTS: "-Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository -Duser.language=ja"
+    MAVEN_CLI_OPTS: "--batch-mode"
+  before_script:
+    - curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s ${REVIEWDOG_VERSION}
+    - apt-get update && apt-get -y install jq git
   script:
-    - mvn -f app/movie-uploader/pom.xml verify
+    - mvn ${MAVEN_CLI_OPTS} -f app/movie-uploader/pom.xml test
+    # Checkstyleのレポートを相対パスに変更
+    - sed --in-place "s|${CI_PROJECT_DIR}/||g" app/movie-uploader/target/checkstyle-result.xml
+    # CheckStyleのViolationをMerge Requestのディスカッションにコメント
+    - >- 
+      cat app/movie-uploader/target/checkstyle-result.xml 
+      | bin/reviewdog -reporter=gitlab-mr-discussion -name="checkstyle" -f checkstyle -tee
+    # SpotBugsのViolationをMerge Requestのディスカッションにコメント
+    - >- 
+      cat app/movie-uploader/target/spotbugsSarif.json
+      | jq -r '.runs[].results[] | [ "`" + .ruleId + "`: " + .message.text, "app/movie-uploader/src/main/java/" + .locations[].physicalLocation.artifactLocation.uri, .locations[].physicalLocation.region.startLine ] | @csv'
+      | bin/reviewdog -reporter=gitlab-mr-discussion -efm '"%m","%f",%l' -name="spotbugs" -tee
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:

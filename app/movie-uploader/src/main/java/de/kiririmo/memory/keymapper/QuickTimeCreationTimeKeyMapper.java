@@ -66,10 +66,6 @@ public class QuickTimeCreationTimeKeyMapper implements MovieFileKeyMapper {
     }
   }
 
-  public Boolean booleanMethod() {
-    return null;
-  }
-
   @Override
   public int hashCode() {
     return super.hashCode();

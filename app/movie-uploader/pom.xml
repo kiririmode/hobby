@@ -20,6 +20,7 @@
     <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
     <checkstyle.config.location>kiririmode-checkstyle.xml</checkstyle.config.location>
     <checkstyle.consoleOutput>true</checkstyle.consoleOutput>
+    <checkstyle.violationSeverity>warning</checkstyle.violationSeverity>
 
     <spotbugs.version>4.6.0.0</spotbugs.version>
     <spotbugs.threshold>Low</spotbugs.threshold>
@@ -135,7 +136,7 @@
             <id>test</id>
             <phase>test</phase>
             <goals>
-              <goal>check</goal>
+              <goal>checkstyle</goal>
             </goals>
           </execution>
         </executions>
@@ -157,7 +158,14 @@
         </configuration>
         <executions>
           <execution>
-            <id>test</id>
+            <id>spotbugs</id>
+            <phase>test</phase>
+            <goals>
+              <goal>spotbugs</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>check</id>
             <phase>test</phase>
             <goals>
               <goal>check</goal>
