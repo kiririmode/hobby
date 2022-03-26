@@ -16,12 +16,14 @@
     <java.version>17</java.version>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
-    <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
 
-    <linkXRef>true</linkXRef>
+    <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
     <checkstyle.config.location>kiririmode-checkstyle.xml</checkstyle.config.location>
     <checkstyle.consoleOutput>true</checkstyle.consoleOutput>
-    <!-- <checkstyle.violationSeverity>warning</checkstyle.violationSeverity> -->
+
+    <spotbugs.version>4.6.0.0</spotbugs.version>
+    <spotbugs.threshold>Low</spotbugs.threshold>
+    <spotbugs.sarifOutput>true</spotbugs.sarifOutput>
   </properties>
 
   <dependencyManagement>
@@ -145,7 +147,6 @@
         <version>${spotbugs.version}</version>
         <configuration>
           <effort>Max</effort>
-          <!-- <includeFilterFile>spotbugs-include.xml</includeFilterFile> -->
           <plugins>
             <plugin>
               <groupId>com.h3xstream.findsecbugs</groupId>
@@ -187,6 +188,12 @@
             </reports>
           </reportSet>
         </reportSets>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>${spotbugs.version}</version>
       </plugin>
     </plugins>
   </reporting>

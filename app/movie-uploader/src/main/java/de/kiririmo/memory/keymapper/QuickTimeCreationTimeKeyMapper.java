@@ -65,4 +65,18 @@ public class QuickTimeCreationTimeKeyMapper implements MovieFileKeyMapper {
       throw new MovieParseException("Failed to generate Object Key for S3", movieFile, e);
     }
   }
+
+  public Boolean booleanMethod() {
+    return null;
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  public static double circumference(double diameter) {
+    return diameter * 3.141;
+  }
+
 }
