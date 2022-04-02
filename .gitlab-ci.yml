@@ -1,5 +1,6 @@
 stages:
   - test
+  - visualize
 
 variables:
   DOCKER_VERSION: stable
@@ -37,3 +38,20 @@ unittest:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
         - "app/**/*"
+  artifacts:
+    paths:
+      - app/movie-uploader/target/site/jacoco/jacoco.xml
+
+coverage:
+  stage: visualize
+  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.8
+  script:
+    # convert report from jacoco to cobertura, using relative project path
+    - python /opt/cover2cover.py app/movie-uploader/target/site/jacoco/jacoco.xml ${CI_PROJECT_DIR}/app/movie-uploader/src/main/java/ > cobertura.xml
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - "app/**/*"
+  artifacts:
+    reports:
+      cobertura: cobertura.xml
