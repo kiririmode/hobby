@@ -45,13 +45,24 @@ unittest:
 coverage:
   stage: visualize
   image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.8
+  variables:
+    jacocoreport: app/movie-uploader/target/site/jacoco/jacoco.xml
+  before_script:
+    # for xmllint
+    - apk --no-cache add libxml2-utils
   script:
-    # convert report from jacoco to cobertura, using relative project path
-    - python /opt/cover2cover.py app/movie-uploader/target/site/jacoco/jacoco.xml ${CI_PROJECT_DIR}/app/movie-uploader/src/main/java/ > cobertura.xml
+    - python /opt/cover2cover.py ${jacocoreport} ${CI_PROJECT_DIR}/app/movie-uploader/src/main/java/ > cobertura.xml
+    - covered=$(xmllint --xpath 'string(/report/counter[@type="BRANCH"]/@covered)' ${jacocoreport})
+    - missed=$(xmllint --xpath 'string(/report/counter[@type="BRANCH"]/@missed)' ${jacocoreport})
+    - coverage=$(awk -vmissed=$missed -vcovered=$covered 'BEGIN{ printf("%.1f\n", covered/(covered+missed)*100 ) }')
+    - echo "Test Coverage=${coverage}%"
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
         - "app/**/*"
+  coverage: '/Test Coverage=\d+\.\d+/'
   artifacts:
     reports:
-      cobertura: cobertura.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: cobertura.xml
