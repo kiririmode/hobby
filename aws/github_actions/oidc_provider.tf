@@ -8,6 +8,6 @@ resource "aws_iam_openid_connect_provider" "github" {
 
   # see: https://qiita.com/minamijoyo/items/eac99e4b1ca0926c4310
   thumbprint_list = [
-    "a031c46782e6e6c662c2c87c76da9aa62ccabd8e"
+    "6938fd4d98bab03faadb97b34396831e3780aea1"
   ]
 }
