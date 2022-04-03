@@ -12,12 +12,20 @@ public class App {
   private static final String BUCKET_NAME = "memories.kiririmo.de";
 
   public static void main(String[] args) {
+    if(args.length == 0) {
+      System.err.println("Movie directories are missing");
+      System.exit(1);
+    }
+
     try {
       MovieUploader uploader =
           new MovieUploader(Region.AP_NORTHEAST_1, BUCKET_NAME, StorageClass.REDUCED_REDUNDANCY);
-      uploader.upload(Path.of("/Users/kiririmode/Downloads/iCloud Photos/tmp/"));
+      for (String dir : args) {
+        uploader.upload(Path.of(dir));
+      }
     } catch (IOException e) {
       e.printStackTrace();
+      System.exit(1);
     }
   }
 }
