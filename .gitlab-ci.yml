@@ -1,0 +1,68 @@
+stages:
+  - test
+  - visualize
+
+variables:
+  DOCKER_VERSION: stable
+  REVIEWDOG_VERSION: v0.14.0
+
+unittest:
+  stage: test
+  image: maven:3.8.4-openjdk-17-slim
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0
+    MAVEN_OPTS: "-Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository -Duser.language=ja"
+    MAVEN_CLI_OPTS: "--batch-mode"
+  before_script:
+    - curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s ${REVIEWDOG_VERSION}
+    - apt-get update && apt-get -y install jq git
+  script:
+    - mvn ${MAVEN_CLI_OPTS} -f app/movie-uploader/pom.xml test
+    # Checkstyleのレポートを相対パスに変更
+    - sed --in-place "s|${CI_PROJECT_DIR}/||g" app/movie-uploader/target/checkstyle-result.xml
+    # CheckStyleのViolationをMerge Requestのディスカッションにコメント
+    - >- 
+      cat app/movie-uploader/target/checkstyle-result.xml 
+      | bin/reviewdog -reporter=gitlab-mr-discussion -name="checkstyle" -f checkstyle -tee
+    # SpotBugsのViolationをMerge Requestのディスカッションにコメント
+    - >- 
+      cat app/movie-uploader/target/spotbugsSarif.json
+      | jq -r '.runs[].results[] | [ "`" + .ruleId + "`: " + .message.text, "app/movie-uploader/src/main/java/" + .locations[].physicalLocation.artifactLocation.uri, .locations[].physicalLocation.region.startLine ] | @csv'
+      | bin/reviewdog -reporter=gitlab-mr-discussion -efm '"%m","%f",%l' -name="spotbugs" -tee
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - "app/**/*"
+  artifacts:
+    paths:
+      - app/movie-uploader/target/site/jacoco/jacoco.xml
+
+coverage:
+  stage: visualize
+  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.8
+  variables:
+    jacocoreport: app/movie-uploader/target/site/jacoco/jacoco.xml
+  before_script:
+    # for xmllint
+    - apk --no-cache add libxml2-utils
+  script:
+    - python /opt/cover2cover.py ${jacocoreport} ${CI_PROJECT_DIR}/app/movie-uploader/src/main/java/ > cobertura.xml
+    - covered=$(xmllint --xpath 'string(/report/counter[@type="BRANCH"]/@covered)' ${jacocoreport})
+    - missed=$(xmllint --xpath 'string(/report/counter[@type="BRANCH"]/@missed)' ${jacocoreport})
+    - coverage=$(awk -vmissed=$missed -vcovered=$covered 'BEGIN{ printf("%.1f\n", covered/(covered+missed)*100 ) }')
+    - echo "Test Coverage=${coverage}%"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - "app/**/*"
+  coverage: '/Test Coverage=\d+\.\d+/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: cobertura.xml

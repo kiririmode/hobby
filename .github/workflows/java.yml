@@ -1,0 +1,33 @@
+name: Java Application Workflow
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  jobs:
+    test:
+      name: Java Application Test
+      runs-on: ubuntu-latest
+
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - uses: actions/setup-java@v2
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Build with Maven
+      run: mvn --batch-mode test
+
+    - name: Run check style
+      uses: nikitasavinov/checkstyle-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        reporter: 'github-pr-check'
+        checkstyle_config: 'kiririmode-checkstyle.xml'
+        fail_on_error: true
+        workdir: 'app/movie-uploader'
+        checkstyle_version: '10.0'
