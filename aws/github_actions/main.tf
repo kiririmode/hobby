@@ -79,6 +79,15 @@ resource "aws_iam_policy" "cloudtrail" {
   }
 }
 
+resource "aws_iam_policy" "movie_uploader" {
+  name = "MovieUploaderPolicy"
+  policy = data.aws_iam_policy_document.movie_uploader.json
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 data "aws_iam_policy_document" "github_actions" {
   statement {
     actions = [
@@ -133,6 +142,16 @@ data "aws_iam_policy_document" "backend_access" {
     ]
     resources = [
       "arn:aws:dynamodb:ap-northeast-1:629415618746:table/terraform_state"
+    ]
+  }
+}
+
+# Movie Uploader用
+data "aws_iam_policy_document" "movie_uploader" {
+  statement {
+    actions = ["iam:GetUser"]
+    resources = [
+      "*"
     ]
   }
 }
