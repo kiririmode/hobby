@@ -15,7 +15,7 @@ resource "aws_budgets_budget" "total" {
   # 予測コスト、実コストのそれぞれで設定
   for_each = toset(["FORECASTED", "ACTUAL"])
 
-  name         = "total_budgets"
+  name         = "total_budgets_${each.key}"
   budget_type  = "COST"
   limit_amount = "10"
   limit_unit   = "USD"
